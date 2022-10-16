@@ -133,7 +133,7 @@ void wifi_802_11_send(const uint8_t *d, uint16_t len)
     buf[sizeof(raw_HEADER) + 1] = len & 0xff;
 
 #ifdef ESP32
-    esp_wifi_80211_tx(ESP_IF_WIFI_STA, buf, sizeof(raw_HEADER) + len + 2, true);
+    esp_wifi_80211_tx(WIFI_IF_STA, buf, sizeof(raw_HEADER) + len + 2, true);
 #else
     wifi_send_pkt_freedom(buf, sizeof(raw_HEADER) + len + 2, true);
 #endif

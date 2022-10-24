@@ -98,11 +98,15 @@ void wifi_802_11_begin(char bsId[], int channel)
   memcpy(raw_HEADER + MY_MAC_OFFSET, mac.c_str(), 6);
 
 #ifdef ESP32
-  esp_wifi_set_mode(WIFI_MODE_STA);
-  esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
-  esp_wifi_set_promiscuous_rx_cb(receive_raw_cb);
-  esp_wifi_set_promiscuous(1);
-  esp_wifi_set_max_tx_power(127);
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+  ESP_ERROR_CHECK(esp_wifi_start());
+  ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(receive_raw_cb));
+  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(1));
+  ESP_ERROR_CHECK(esp_wifi_set_max_tx_power(8));
+  ESP_ERROR_CHECK(esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE));
 #else
   wifi_set_opmode(STATION_MODE);
   wifi_set_channel(channel);

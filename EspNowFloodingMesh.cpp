@@ -1,7 +1,8 @@
 #ifdef ESP32
+  #include <WiFi.h>
   #ifndef USE_RAW_801_11
     #include <esp_now.h>
-    #include <WiFi.h>
+    
   #endif
   #include <rom/crc.h>
   #include "mbedtls/aes.h"
@@ -104,7 +105,7 @@ uint8_t aes_secredKey[] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xA
 bool forwardMsg(const uint8_t *data, int len);
 uint32_t sendMsg(uint8_t* msg, int size, int ttl, int msgId, void *ptr=NULL);
 void hexDump(const uint8_t*b,int len);
-static void (*espNowFloodingMesh_receive_cb)(const uint8_t *, int, uint32_t) = NULL;
+static void (*espNowFloodingMesh_receive_cb)(const uint8_t *, int, uint32_t, uint8_t) = NULL;
 
 uint16_t calculateCRC(int c, const unsigned char*b, int len);
 uint16_t calculateCRC(struct meshFrame *m);
@@ -367,7 +368,7 @@ private:
 RejectedMessageDB rejectedMessageDB;
 
 
-void espNowFloodingMesh_RecvCB(void (*callback)(const uint8_t *, int, uint32_t)) {
+void espNowFloodingMesh_RecvCB(void (*callback)(const uint8_t *, int, uint32_t, uint8_t)) {
   espNowFloodingMesh_receive_cb = callback;
 }
 
@@ -620,7 +621,7 @@ void msg_recv_cb(const uint8_t *data, int len, const uint8_t *mac_addr)
               if ( m.encrypted.header.msgId == USER_MSG) {
                 if (messageTimeOk) {
                   // shell we rebroadcast message first ? (to reduce latency?) 
-                  espNowFloodingMesh_receive_cb(m.encrypted.data, m.encrypted.header.length, m.encrypted.header.p1);
+                  espNowFloodingMesh_receive_cb(m.encrypted.data, m.encrypted.header.length, m.encrypted.header.p1, rssi);
                   ok = true;
                 } else {
                   #ifdef DEBUG_PRINTS
@@ -639,7 +640,7 @@ void msg_recv_cb(const uint8_t *data, int len, const uint8_t *mac_addr)
                   if (d != NULL) {
                     d->cb(m.encrypted.data, m.encrypted.header.length);
                   } else {
-                    espNowFloodingMesh_receive_cb(m.encrypted.data, m.encrypted.header.length, m.encrypted.header.p1);
+                    espNowFloodingMesh_receive_cb(m.encrypted.data, m.encrypted.header.length, m.encrypted.header.p1, rssi);
                   }
                   ok = true;
                 } else {
@@ -653,7 +654,7 @@ void msg_recv_cb(const uint8_t *data, int len, const uint8_t *mac_addr)
 
               if (m.encrypted.header.msgId == USER_REQUIRE_RESPONSE_MSG) {
                 if (messageTimeOk) {
-                  espNowFloodingMesh_receive_cb(m.encrypted.data, m.encrypted.header.length, m.encrypted.header.p1);
+                  espNowFloodingMesh_receive_cb(m.encrypted.data, m.encrypted.header.length, m.encrypted.header.p1, rssi);
                   ok = true;
                 } else {
                   #ifdef DEBUG_PRINTS
@@ -698,7 +699,7 @@ void msg_recv_cb(const uint8_t *data, int len, const uint8_t *mac_addr)
                 }
               }
               if (espNowFloodingMesh_receive_cb) {
-                espNowFloodingMesh_receive_cb(m.encrypted.data, m.encrypted.header.length, 0);
+                espNowFloodingMesh_receive_cb(m.encrypted.data, m.encrypted.header.length, 0, rssi);
               }
             }
 
@@ -784,15 +785,15 @@ void espNowFloodingMesh_begin(int channel, int bsid, bool disconnect_wifi ) {
 #else
 void espNowFloodingMesh_begin(int channel, char bsId[6], bool disconnect_wifi) {
 #endif
-
+#ifndef USE_RAW_801_11
   if (disconnect_wifi) 
   { // takes significant amount of time, now disconnect is optional
     // Serial.println("Disconnecting WIFI for espnow");
     WiFi.disconnect();
-    WiFi.mode(WIFI_OFF);
-    WiFi.mode(WIFI_STA);
+    //WiFi.mode(WIFI_MODE_OFF);
+    WiFi.mode(WIFI_MODE_STA);
   }
-
+#endif
   #ifndef ESP32
     randomSeed(analogRead(0));
   #endif
@@ -805,8 +806,11 @@ void espNowFloodingMesh_begin(int channel, char bsId[6], bool disconnect_wifi) {
         wifi_802_receive_cb(msg_recv_cb);
   #endif
   isespNowFloodingMeshInitialized = true;
-
-  myBsid = bsid;
+  #ifdef USE_RAW_801_11
+	sscanf(bsId, "%d", &myBsid);
+  #else
+	myBsid = bsid;
+  #endif
   #ifdef ENABLE_TELEMETRY
   espNowFloodingMesh_telemetry_reset_tdb();
   #endif

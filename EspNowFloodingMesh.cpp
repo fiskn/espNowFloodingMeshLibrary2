@@ -29,7 +29,7 @@
 #define ALLOW_TIME_ERROR_IN_SYNC_MESSAGE false //Decrease security. false=Validate sync messages against own RTC time
 
 // 10 - 300 sec
-#define RESEND_SYNC_TIME_MS           5000
+#define RESEND_SYNC_TIME_MS           15000
 
 #define USER_MSG                      1
 #define SYNC_TIME_MSG                 2

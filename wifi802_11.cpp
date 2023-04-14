@@ -124,8 +124,8 @@ void wifi_802_receive_cb(void (*cb)(const uint8_t *, int, uint8_t))
 void wifi_802_11_send(const uint8_t *d, uint16_t len)
 {
   uint8_t buf[500];
-  for (int i = 0; i < 5; i++)
-  { // really 5 times ?
+  for (int i = 0; i < 2; i++)
+  {
     if (len > sizeof(buf) - sizeof(raw_HEADER) - 2)
       return;
 

@@ -89,6 +89,11 @@ void receive_raw_cb(unsigned char *frm, short unsigned int len)
   }
 }
 #endif
+
+esp_err_t event_handler(void *ctx, system_event_t *event) {
+	return ESP_OK;
+}
+
 char password[15];
 void wifi_802_11_begin(char bsId[], int channel)
 {
